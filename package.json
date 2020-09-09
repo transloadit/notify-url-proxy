@@ -3,7 +3,7 @@
   "name": "transloadit-notify-url-proxy",
   "version": "0.0.1",
   "dependencies": {
-    "http-proxy": "1.17.0",
+    "http-proxy": "1.18.1",
     "request": "2.88.0",
     "underscore": "1.9.1"
   }
