@@ -5,6 +5,6 @@
   "dependencies": {
     "http-proxy": "1.18.1",
     "request": "2.88.0",
-    "underscore": "1.9.1"
+    "underscore": "1.12.1"
   }
 }
