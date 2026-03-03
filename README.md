@@ -19,8 +19,9 @@ yarn add transloadit-notify-url-proxy
 ## CLI usage
 
 ```bash
+export TRANSLOADIT_SECRET="your-secret"
+
 notify-url-proxy \
-  --secret "$TRANSLOADIT_SECRET" \
   --notifyUrl "http://127.0.0.1:3000/transloadit" \
   --port 8888
 ```

@@ -19,7 +19,6 @@ function parsePositiveIntOption(
 
 const { values } = parseArgs({
   options: {
-    secret: { type: 'string' },
     notifyUrl: { type: 'string' },
     target: { type: 'string' },
     port: { type: 'string' },
@@ -33,7 +32,6 @@ if (values.help) {
   console.log(`Usage: notify-url-proxy [options]
 
 Options:
-  --secret <value>           HMAC secret for notification signatures (required)
   --notifyUrl <url>          URL to send notifications to
   --target <url>             Transloadit assemblies endpoint to proxy to
   --port <number>            Local listen port
@@ -47,9 +45,9 @@ Environment fallback:
   process.exit(0);
 }
 
-const secret = values.secret ?? process.env.TRANSLOADIT_SECRET;
+const secret = process.env.TRANSLOADIT_SECRET;
 if (!secret) {
-  console.error('Missing secret. Provide --secret or TRANSLOADIT_SECRET.');
+  console.error('Missing secret. Set TRANSLOADIT_SECRET.');
   process.exit(1);
 }
 
