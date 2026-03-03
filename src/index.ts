@@ -1,11 +1,17 @@
-import { createHmac } from 'node:crypto'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import { setTimeout as delay } from 'node:timers/promises'
-
+import { signParamsSync } from '@transloadit/utils/node'
 import {
+  type AssemblyStatus,
   assemblyStatusOkCodeSchema,
-  isAssemblyBusyStatus,
-  isAssemblyTerminalOkStatus,
+  assemblyStatusSchema,
+  getAssemblyStage,
+  getError,
+  getOk,
+  isAssemblyBusy,
+  isAssemblyTerminalError,
+  isAssemblyTerminalOk,
+  parseAssemblyUrls,
 } from '@transloadit/zod/v4'
 import httpProxy from 'http-proxy'
 
@@ -18,10 +24,7 @@ export interface ProxySettings {
 
 type KnownAssemblyState = (typeof assemblyStatusOkCodeSchema.options)[number]
 
-export interface AssemblyResponse {
-  ok: KnownAssemblyState
-  [key: string]: unknown
-}
+export type AssemblyResponse = AssemblyStatus
 
 const DEFAULT_SETTINGS: ProxySettings = {
   target: 'https://api2.transloadit.com/assemblies/',
@@ -34,6 +37,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
+class TerminalAssemblyError extends Error {}
+
 function toErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message
@@ -45,12 +50,7 @@ function toErrorMessage(error: unknown): string {
 export function extractAssemblyUrl(body: string): string | null {
   try {
     const payload = JSON.parse(body) as unknown
-    if (!isRecord(payload)) {
-      return null
-    }
-
-    const assemblyUrl = payload.assembly_url
-    return typeof assemblyUrl === 'string' && assemblyUrl.length > 0 ? assemblyUrl : null
+    return parseAssemblyUrls(payload).assemblyUrl
   } catch {
     return null
   }
@@ -70,7 +70,16 @@ export function getAssemblyState(payload: unknown): KnownAssemblyState {
 }
 
 export function getSignature(secret: string, toSign: string): string {
-  return createHmac('sha1', secret).update(Buffer.from(toSign, 'utf-8')).digest('hex')
+  return signParamsSync(toSign, secret, 'sha384')
+}
+
+export function parseAssemblyResponse(payload: unknown): AssemblyResponse {
+  const parsed = assemblyStatusSchema.safeParse(payload)
+  if (!parsed.success) {
+    throw new Error('Invalid assembly response payload.')
+  }
+
+  return parsed.data
 }
 
 export default class TransloaditNotifyUrlProxy {
@@ -180,6 +189,11 @@ export default class TransloaditNotifyUrlProxy {
         await this.notify(response)
         return
       } catch (error) {
+        if (error instanceof TerminalAssemblyError) {
+          this.out('%s', error.message)
+          return
+        }
+
         if (attempt === this.settings.maxPollAttempts) {
           this.out('No attempts left, giving up on checking assemblyUrl: %s', assemblyUrl)
           return
@@ -204,25 +218,30 @@ export default class TransloaditNotifyUrlProxy {
       throw new Error(`Assembly poll returned HTTP ${response.status}`)
     }
 
-    const payload = (await response.json()) as unknown
-    const state = getAssemblyState(payload)
+    const assembly = parseAssemblyResponse((await response.json()) as unknown)
 
-    if (isAssemblyTerminalOkStatus(state)) {
-      this.out('%s reached terminal state %s.', assemblyUrl, state)
-      return payload as AssemblyResponse
+    if (isAssemblyTerminalError(assembly)) {
+      const errorCode = getError(assembly) ?? 'UNKNOWN_ERROR'
+      throw new TerminalAssemblyError(`${assemblyUrl} reached terminal error state ${errorCode}.`)
     }
 
-    if (isAssemblyBusyStatus(state)) {
-      if (state === 'ASSEMBLY_UPLOADING') {
+    if (isAssemblyTerminalOk(assembly)) {
+      this.out('%s reached terminal state %s.', assemblyUrl, getOk(assembly))
+      return assembly
+    }
+
+    if (isAssemblyBusy(assembly)) {
+      const stage = getAssemblyStage(assembly)
+      if (stage === 'uploading') {
         throw new Error(`${assemblyUrl} is still uploading.`)
       }
-      if (state === 'ASSEMBLY_EXECUTING') {
+      if (stage === 'processing') {
         throw new Error(`${assemblyUrl} is still executing.`)
       }
       throw new Error(`${assemblyUrl} is still replaying.`)
     }
 
-    throw new Error(`${assemblyUrl} is in non-terminal state ${state}.`)
+    throw new Error(`${assemblyUrl} returned a non-terminal assembly state.`)
   }
 
   private async notify(response: AssemblyResponse): Promise<void> {

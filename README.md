@@ -10,6 +10,8 @@ This version is modernized for:
 - Yarn 4
 - Biome + Vitest + GitHub Actions + Changesets
 
+Notify payloads are signed via `@transloadit/utils` using prefixed `sha384` signatures.
+
 ## Install
 
 ```bash
