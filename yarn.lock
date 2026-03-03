@@ -815,6 +815,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@transloadit/zod@npm:^4.3.0":
+  version: 4.3.0
+  resolution: "@transloadit/zod@npm:4.3.0"
+  dependencies:
+    type-fest: "npm:^4.41.0"
+    zod: "npm:^4.0.0"
+  checksum: 10c0/7bbf4fb70dcfd1417a1ec0c65fae0713504f0f19f4a6b737d5082aa9e6eec073af8f3448bd3358d0dcda36e59d862261cef9177e95eef77951edc5441b9d1617
+  languageName: node
+  linkType: hard
+
 "@types/chai@npm:^5.2.2":
   version: 5.2.3
   resolution: "@types/chai@npm:5.2.3"
@@ -2335,6 +2345,7 @@ __metadata:
   dependencies:
     "@biomejs/biome": "npm:^2.4.5"
     "@changesets/cli": "npm:^2.30.0"
+    "@transloadit/zod": "npm:^4.3.0"
     "@types/http-proxy": "npm:^1.17.17"
     "@types/node": "npm:^25.3.3"
     http-proxy: "npm:^1.18.1"
@@ -2344,6 +2355,13 @@ __metadata:
     notify-url-proxy: ./bin/notify-url-proxy.ts
   languageName: unknown
   linkType: soft
+
+"type-fest@npm:^4.41.0":
+  version: 4.41.0
+  resolution: "type-fest@npm:4.41.0"
+  checksum: 10c0/f5ca697797ed5e88d33ac8f1fec21921839871f808dc59345c9cf67345bfb958ce41bd821165dbf3ae591cedec2bf6fe8882098dfdd8dc54320b859711a2c1e4
+  languageName: node
+  linkType: hard
 
 "typescript@npm:^5.9.3":
   version: 5.9.3
@@ -2556,5 +2574,12 @@ __metadata:
   version: 5.0.0
   resolution: "yallist@npm:5.0.0"
   checksum: 10c0/a499c81ce6d4a1d260d4ea0f6d49ab4da09681e32c3f0472dee16667ed69d01dae63a3b81745a24bd78476ec4fcf856114cb4896ace738e01da34b2c42235416
+  languageName: node
+  linkType: hard
+
+"zod@npm:^4.0.0":
+  version: 4.3.6
+  resolution: "zod@npm:4.3.6"
+  checksum: 10c0/860d25a81ab41d33aa25f8d0d07b091a04acb426e605f396227a796e9e800c44723ed96d0f53a512b57be3d1520f45bf69c0cb3b378a232a00787a2609625307
   languageName: node
   linkType: hard

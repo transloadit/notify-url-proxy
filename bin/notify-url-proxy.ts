@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 
-import { parseArgs } from 'node:util';
+import { parseArgs } from 'node:util'
 
-import TransloaditNotifyUrlProxy, { type ProxySettings } from '../src/index.ts';
+import TransloaditNotifyUrlProxy, { type ProxySettings } from '../src/index.ts'
 
 function parsePositiveIntOption(
   name: string,
   value: string,
   max = Number.MAX_SAFE_INTEGER,
 ): number {
-  const parsed = Number.parseInt(value, 10);
+  const parsed = Number.parseInt(value, 10)
   if (!Number.isInteger(parsed) || parsed <= 0 || parsed > max) {
-    console.error(`Invalid ${name}: ${value}`);
-    process.exit(1);
+    console.error(`Invalid ${name}: ${value}`)
+    process.exit(1)
   }
-  return parsed;
+  return parsed
 }
 
 const { values } = parseArgs({
@@ -26,7 +26,7 @@ const { values } = parseArgs({
     maxPollAttempts: { type: 'string' },
     help: { type: 'boolean', short: 'h' },
   },
-});
+})
 
 if (values.help) {
   console.log(`Usage: notify-url-proxy [options]
@@ -41,41 +41,41 @@ Options:
 
 Environment fallback:
   TRANSLOADIT_SECRET, TRANSLOADIT_NOTIFY_URL
-`);
-  process.exit(0);
+`)
+  process.exit(0)
 }
 
-const secret = process.env.TRANSLOADIT_SECRET;
+const secret = process.env.TRANSLOADIT_SECRET
 if (!secret) {
-  console.error('Missing secret. Set TRANSLOADIT_SECRET.');
-  process.exit(1);
+  console.error('Missing secret. Set TRANSLOADIT_SECRET.')
+  process.exit(1)
 }
 
-const settings: Partial<ProxySettings> = {};
+const settings: Partial<ProxySettings> = {}
 
 if (values.target) {
-  settings.target = values.target;
+  settings.target = values.target
 }
 if (values.port) {
-  settings.port = parsePositiveIntOption('port', values.port, 65_535);
+  settings.port = parsePositiveIntOption('port', values.port, 65_535)
 }
 if (values.pollIntervalMs) {
-  settings.pollIntervalMs = parsePositiveIntOption('pollIntervalMs', values.pollIntervalMs);
+  settings.pollIntervalMs = parsePositiveIntOption('pollIntervalMs', values.pollIntervalMs)
 }
 if (values.maxPollAttempts) {
-  settings.maxPollAttempts = parsePositiveIntOption('maxPollAttempts', values.maxPollAttempts);
+  settings.maxPollAttempts = parsePositiveIntOption('maxPollAttempts', values.maxPollAttempts)
 }
 
 const proxy = new TransloaditNotifyUrlProxy(
   secret,
   values.notifyUrl ?? process.env.TRANSLOADIT_NOTIFY_URL,
-);
-proxy.run(settings);
+)
+proxy.run(settings)
 
 const close = () => {
-  proxy.close();
-  process.exit(0);
-};
+  proxy.close()
+  process.exit(0)
+}
 
-process.on('SIGINT', close);
-process.on('SIGTERM', close);
+process.on('SIGINT', close)
+process.on('SIGTERM', close)
