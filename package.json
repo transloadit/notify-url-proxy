@@ -1,10 +1,45 @@
 {
-  "author": "@tim-kos",
   "name": "transloadit-notify-url-proxy",
+  "description": "Local notify_url proxy for Transloadit assemblies.",
   "version": "0.0.1",
+  "type": "module",
+  "packageManager": "yarn@4.10.3",
+  "author": "@tim-kos",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "notify-url-proxy": "./bin/notify-url-proxy.ts"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "node ./bin/notify-url-proxy.ts",
+    "lint": "biome check .",
+    "format": "biome format . --write",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "yarn lint && yarn typecheck && yarn test",
+    "changeset": "changeset",
+    "changeset:version": "changeset version"
+  },
   "dependencies": {
-    "http-proxy": "1.18.1",
-    "request": "2.88.0",
-    "underscore": "1.12.1"
+    "http-proxy": "^1.18.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.5",
+    "@changesets/cli": "^2.30.0",
+    "@types/http-proxy": "^1.17.17",
+    "@types/node": "^25.3.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   }
 }
