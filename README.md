@@ -12,4 +12,4 @@ This repository has moved.
 
 Please migrate to the new package for updates and fixes.
 
-This project is heavily inspired by the work from @substantial's [node-transloadit-development_notify_url_proxy](https://github.com/substantial/node-transloadit-development_notify_url_proxy) project.
+This project is heavily inspired by the work from [@substantial](https://github.com/substantial)'s [node-transloadit-development_notify_url_proxy](https://github.com/substantial/node-transloadit-development_notify_url_proxy) project.
