@@ -1,6 +1,7 @@
 {
   "author": "@tim-kos",
   "name": "transloadit-notify-url-proxy",
+  "description": "DEPRECATED: moved to @transloadit/notify-url-proxy in transloadit/node-sdk",
   "version": "0.0.1",
   "dependencies": {
     "http-proxy": "1.18.1",
