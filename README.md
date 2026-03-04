@@ -60,6 +60,18 @@ yarn test
 yarn check
 ```
 
+## Real API E2E
+
+Run an opt-in test against the real Transloadit API:
+
+```bash
+yarn env:sync:node-sdk
+yarn test:real
+```
+
+This copies `TRANSLOADIT_KEY` and `TRANSLOADIT_SECRET` from `~/code/node-sdk/.env` into a local
+`.env` (gitignored), then runs `test/real.e2e.test.ts`.
+
 ## Releases
 
 Changesets drives releases:
