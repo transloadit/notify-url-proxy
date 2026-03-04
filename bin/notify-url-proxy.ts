@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { parseArgs } from 'node:util'
-
 import { SevLogger } from '@transloadit/sev-logger'
+import { config as loadDotEnv } from 'dotenv'
 import TransloaditNotifyUrlProxy, {
   type CounterMetricEvent,
   type GaugeMetricEvent,
@@ -11,6 +11,8 @@ import TransloaditNotifyUrlProxy, {
   type ProxySettings,
   type TimingMetricEvent,
 } from '../src/index.ts'
+
+loadDotEnv({ quiet: true })
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1'])
 
