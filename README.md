@@ -11,6 +11,7 @@ This version is modernized for:
 - Biome + Vitest + GitHub Actions + Changesets
 
 Notify payloads are signed via `@transloadit/utils` using prefixed `sha384` signatures.
+Polling retries use `p-retry`, and logs are emitted via `@transloadit/sev-logger`.
 
 ## Install
 
@@ -25,10 +26,15 @@ export TRANSLOADIT_SECRET="your-secret"
 
 notify-url-proxy \
   --notifyUrl "http://127.0.0.1:3000/transloadit" \
-  --port 8888
+  --port 8888 \
+  --log-level info
 ```
 
 Run `notify-url-proxy --help` for all options.
+
+Log level accepts `0-8` or names:
+`emerg`, `alert`, `crit`, `err`, `warn`, `notice`, `info`, `debug`, `trace`.
+You can also set `TRANSLOADIT_LOG_LEVEL`.
 
 ## Programmatic usage
 

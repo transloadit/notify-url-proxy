@@ -1,25 +1,32 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
-import { setTimeout as delay } from 'node:timers/promises'
+import { SevLogger } from '@transloadit/sev-logger'
 import { signParamsSync } from '@transloadit/utils/node'
 import {
   type AssemblyStatus,
-  assemblyStatusOkCodeSchema,
+  type assemblyStatusOkCodeSchema,
   assemblyStatusSchema,
   getAssemblyStage,
   getError,
   getOk,
   isAssemblyBusy,
+  isAssemblyOkStatus,
   isAssemblyTerminalError,
   isAssemblyTerminalOk,
   parseAssemblyUrls,
 } from '@transloadit/zod/v4'
 import httpProxy from 'http-proxy'
+import pRetry, { AbortError, type RetryContext } from 'p-retry'
 
 export interface ProxySettings {
   target: string
   port: number
   pollIntervalMs: number
   maxPollAttempts: number
+}
+
+export interface ProxyLoggerOptions {
+  logger?: SevLogger
+  logLevel?: number
 }
 
 type KnownAssemblyState = (typeof assemblyStatusOkCodeSchema.options)[number]
@@ -33,11 +40,11 @@ const DEFAULT_SETTINGS: ProxySettings = {
   maxPollAttempts: 10,
 }
 
+const DEFAULT_LOG_LEVEL = SevLogger.LEVEL.INFO
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
-
-class TerminalAssemblyError extends Error {}
 
 function toErrorMessage(error: unknown): string {
   if (error instanceof Error) {
@@ -57,16 +64,16 @@ export function extractAssemblyUrl(body: string): string | null {
 }
 
 export function getAssemblyState(payload: unknown): KnownAssemblyState {
-  if (!isRecord(payload) || typeof payload.ok !== 'string') {
+  if (!isRecord(payload)) {
     throw new Error('No ok field found in Assembly response.')
   }
 
-  const parsedState = assemblyStatusOkCodeSchema.safeParse(payload.ok)
-  if (!parsedState.success) {
-    throw new Error(`Unknown Assembly state found: ${payload.ok}`)
+  const ok = typeof payload.ok === 'string' ? payload.ok : undefined
+  if (!isAssemblyOkStatus(ok)) {
+    throw new Error(`Unknown Assembly state found: ${String(payload.ok)}`)
   }
 
-  return parsedState.data
+  return ok
 }
 
 export function getSignature(secret: string, toSign: string): string {
@@ -88,15 +95,30 @@ export default class TransloaditNotifyUrlProxy {
 
   private readonly secret: string
   private readonly notifyUrl: string
+  private readonly logger: SevLogger
   private readonly defaults: ProxySettings
   private settings: ProxySettings
 
-  constructor(secret: string, notifyUrl = 'http://127.0.0.1:3000/transloadit') {
+  constructor(
+    secret: string,
+    notifyUrl = 'http://127.0.0.1:3000/transloadit',
+    loggerOptions: ProxyLoggerOptions = {},
+  ) {
     this.secret = secret || ''
     this.notifyUrl = notifyUrl
 
     this.defaults = { ...DEFAULT_SETTINGS }
     this.settings = { ...DEFAULT_SETTINGS }
+    this.logger =
+      loggerOptions.logger ??
+      new SevLogger({
+        breadcrumbs: ['notify-url-proxy'],
+        level: loggerOptions.logLevel ?? DEFAULT_LOG_LEVEL,
+      })
+
+    if (loggerOptions.logger && typeof loggerOptions.logLevel === 'number') {
+      this.logger.update({ level: loggerOptions.logLevel })
+    }
   }
 
   run(opts: Partial<ProxySettings> = {}): void {
@@ -133,7 +155,7 @@ export default class TransloaditNotifyUrlProxy {
       } else {
         res.end()
       }
-      this.out('Proxy error: %s', toErrorMessage(error))
+      this.logger.err(`Proxy error: ${toErrorMessage(error)}`)
     })
 
     this.proxy.on('proxyRes', (proxyRes) => {
@@ -152,11 +174,8 @@ export default class TransloaditNotifyUrlProxy {
 
     this.server.listen(this.settings.port)
 
-    this.out(
-      'Listening on http://localhost:%d, forwarding to %s, notifying %s',
-      this.settings.port,
-      this.settings.target,
-      this.notifyUrl,
+    this.logger.notice(
+      `Listening on http://localhost:${this.settings.port}, forwarding to ${this.settings.target}, notifying ${this.notifyUrl}`,
     )
   }
 
@@ -168,7 +187,7 @@ export default class TransloaditNotifyUrlProxy {
       return
     }
 
-    this.out('Received proxy response, polling assemblyUrl: %s', assemblyUrl)
+    this.logger.info(`Received proxy response, polling assemblyUrl: ${assemblyUrl}`)
     await this.pollAssembly(assemblyUrl)
   }
 
@@ -183,32 +202,36 @@ export default class TransloaditNotifyUrlProxy {
   }
 
   private async pollAssembly(assemblyUrl: string): Promise<void> {
-    for (let attempt = 1; attempt <= this.settings.maxPollAttempts; attempt += 1) {
-      try {
-        const response = await this.checkAssembly(assemblyUrl)
-        await this.notify(response)
+    const retries = Math.max(this.settings.maxPollAttempts - 1, 0)
+
+    try {
+      const response = await pRetry(() => this.checkAssembly(assemblyUrl), {
+        retries,
+        minTimeout: this.settings.pollIntervalMs,
+        maxTimeout: this.settings.pollIntervalMs,
+        factor: 1,
+        randomize: false,
+        onFailedAttempt: (retryContext: RetryContext) => {
+          if (retryContext.retriesLeft <= 0) {
+            return
+          }
+
+          this.logger.warn(
+            `Attempt ${retryContext.attemptNumber}/${this.settings.maxPollAttempts} failed for ${assemblyUrl}: ${retryContext.error.message}`,
+          )
+        },
+      })
+
+      await this.notify(response)
+    } catch (error) {
+      if (error instanceof AbortError) {
+        this.logger.notice(error.message)
         return
-      } catch (error) {
-        if (error instanceof TerminalAssemblyError) {
-          this.out('%s', error.message)
-          return
-        }
-
-        if (attempt === this.settings.maxPollAttempts) {
-          this.out('No attempts left, giving up on checking assemblyUrl: %s', assemblyUrl)
-          return
-        }
-
-        this.out(
-          'Attempt %d/%d failed for %s: %s',
-          attempt,
-          this.settings.maxPollAttempts,
-          assemblyUrl,
-          toErrorMessage(error),
-        )
-
-        await delay(this.settings.pollIntervalMs)
       }
+
+      this.logger.err(
+        `No attempts left, giving up on checking assemblyUrl: ${assemblyUrl} (${toErrorMessage(error)})`,
+      )
     }
   }
 
@@ -222,11 +245,11 @@ export default class TransloaditNotifyUrlProxy {
 
     if (isAssemblyTerminalError(assembly)) {
       const errorCode = getError(assembly) ?? 'UNKNOWN_ERROR'
-      throw new TerminalAssemblyError(`${assemblyUrl} reached terminal error state ${errorCode}.`)
+      throw new AbortError(`${assemblyUrl} reached terminal error state ${errorCode}.`)
     }
 
     if (isAssemblyTerminalOk(assembly)) {
-      this.out('%s reached terminal state %s.', assemblyUrl, getOk(assembly))
+      this.logger.info(`${assemblyUrl} reached terminal state ${getOk(assembly)}.`)
       return assembly
     }
 
@@ -263,10 +286,6 @@ export default class TransloaditNotifyUrlProxy {
       throw new Error(`Notify URL returned HTTP ${notifyResponse.status}`)
     }
 
-    this.out('Notify payload sent to %s', this.notifyUrl)
-  }
-
-  private out(message: string, ...args: unknown[]): void {
-    console.log(message, ...args)
+    this.logger.notice(`Notify payload sent to ${this.notifyUrl}`)
   }
 }

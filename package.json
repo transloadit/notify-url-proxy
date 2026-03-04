@@ -33,9 +33,11 @@
     "changeset:version": "changeset version"
   },
   "dependencies": {
+    "@transloadit/sev-logger": "^0.1.9",
     "@transloadit/utils": "^4.3.0",
     "@transloadit/zod": "^4.3.0",
-    "http-proxy": "^1.18.1"
+    "http-proxy": "^1.18.1",
+    "p-retry": "^7.1.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.5",
