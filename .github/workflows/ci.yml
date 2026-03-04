@@ -7,11 +7,49 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     name: Lint + Typecheck + Unit
     runs-on: ubuntu-latest
     steps:
+      - name: Changeset policy (PR only)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request
+            const labels = (pr.labels || []).map((label) => label.name)
+            const hasBypassLabel = labels.includes('no-changeset') || labels.includes('skip-changeset')
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              per_page: 100,
+            })
+
+            const touchesReleaseSurface = files.some((file) =>
+              /^src\/|^bin\/|^package\.json$|^README\.md$/.test(file.filename),
+            )
+
+            const hasChangeset = files.some((file) =>
+              file.filename.startsWith('.changeset/') &&
+              file.filename.endsWith('.md') &&
+              file.filename !== '.changeset/README.md',
+            )
+
+            if (touchesReleaseSurface && !hasChangeset && !hasBypassLabel) {
+              core.setFailed(
+                'This PR changes package behavior/release surface. Add a changeset or apply the no-changeset/skip-changeset label.',
+              )
+              return
+            }
+
+            core.info('Changeset policy passed.')
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:

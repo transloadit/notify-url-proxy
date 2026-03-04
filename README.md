@@ -11,7 +11,7 @@ This version is modernized for:
 - Biome + Vitest + GitHub Actions + Changesets
 
 Notify payloads are signed via `@transloadit/utils` using prefixed `sha384` signatures.
-Polling retries use `p-retry`, and logs are emitted via `@transloadit/sev-logger`.
+Forwarding uses native `fetch`, polling retries use `p-retry`, and logs are emitted via `@transloadit/sev-logger`.
 
 ## Install
 
@@ -27,6 +27,7 @@ export TRANSLOADIT_SECRET="your-secret"
 notify-url-proxy \
   --notifyUrl "http://127.0.0.1:3000/transloadit" \
   --port 8888 \
+  --notifyOnTerminalError \
   --log-level info
 ```
 
@@ -48,9 +49,13 @@ const proxy = new TransloaditNotifyUrlProxy(
 
 proxy.run({
   port: 8888,
-  target: 'https://api2.transloadit.com/assemblies/',
+  target: 'https://api2.transloadit.com',
   pollIntervalMs: 2000,
-  maxPollAttempts: 10
+  pollMaxIntervalMs: 30000,
+  pollBackoffFactor: 2,
+  maxPollAttempts: 10,
+  maxInFlightPolls: 4,
+  notifyOnTerminalError: false
 });
 ```
 
@@ -63,12 +68,13 @@ yarn install
 yarn lint
 yarn typecheck
 yarn test
+yarn test:real
 yarn check
 ```
 
 ## Real API E2E
 
-Run an opt-in test against the real Transloadit API:
+Run an opt-in test against the real Transloadit API (default `yarn test` excludes this test):
 
 ```bash
 # set locally (for example in .env)

@@ -3,7 +3,6 @@ import { existsSync } from 'node:fs'
 import { createServer, type IncomingMessage, type Server } from 'node:http'
 import { setTimeout as delay } from 'node:timers/promises'
 
-import { Transloadit } from 'transloadit'
 import { describe, expect, it } from 'vitest'
 
 import TransloaditNotifyUrlProxy, { getSignature } from '../src/index.ts'
@@ -99,6 +98,7 @@ describeReal('real api e2e', () => {
       maxPollAttempts: 120,
     })
 
+    const { Transloadit } = await import('transloadit')
     const client = new Transloadit({
       authKey,
       authSecret: secret,

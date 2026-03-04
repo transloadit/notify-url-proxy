@@ -8,6 +8,11 @@
   "engines": {
     "node": ">=24"
   },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "provenance": true
+  },
   "bin": {
     "notify-url-proxy": "./bin/notify-url-proxy.ts"
   },
@@ -36,13 +41,11 @@
     "@transloadit/sev-logger": "^0.1.9",
     "@transloadit/utils": "^4.3.0",
     "@transloadit/zod": "^4.3.0",
-    "http-proxy": "^1.18.1",
     "p-retry": "^7.1.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.5",
     "@changesets/cli": "^2.30.0",
-    "@types/http-proxy": "^1.17.17",
     "@types/node": "^25.3.3",
     "transloadit": "^4.7.4",
     "typescript": "^5.9.3",
