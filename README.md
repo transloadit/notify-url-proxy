@@ -12,6 +12,7 @@ This version is modernized for:
 
 Notify payloads are signed via `@transloadit/utils` using prefixed `sha384` signatures.
 Forwarding uses native `fetch`, polling retries use `p-retry`, and logs are emitted via `@transloadit/sev-logger`.
+Metrics hooks are available for counters, gauges, and timings.
 
 ## Install
 
@@ -37,6 +38,19 @@ Log level accepts `0-8` or names:
 `emerg`, `alert`, `crit`, `err`, `warn`, `notice`, `info`, `debug`, `trace`.
 You can also set `TRANSLOADIT_LOG_LEVEL`.
 
+### Reactive TUI Mode
+
+```bash
+notify-url-proxy --ui --log-level info
+```
+
+This opens a live terminal dashboard with:
+
+- throughput and retry counters
+- in-flight queue gauges
+- latency sparklines
+- streaming logs
+
 ## Programmatic usage
 
 ```ts
@@ -50,12 +64,19 @@ const proxy = new TransloaditNotifyUrlProxy(
 proxy.run({
   port: 8888,
   target: 'https://api2.transloadit.com',
+  forwardTimeoutMs: 15000,
   pollIntervalMs: 2000,
   pollMaxIntervalMs: 30000,
   pollBackoffFactor: 2,
+  pollRequestTimeoutMs: 15000,
   maxPollAttempts: 10,
   maxInFlightPolls: 4,
-  notifyOnTerminalError: false
+  notifyOnTerminalError: false,
+  notifyTimeoutMs: 15000,
+  notifyMaxAttempts: 3,
+  notifyIntervalMs: 500,
+  notifyMaxIntervalMs: 5000,
+  notifyBackoffFactor: 2
 });
 ```
 

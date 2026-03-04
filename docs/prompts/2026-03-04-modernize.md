@@ -30,3 +30,17 @@ Verification plan:
 2. `yarn check`
 3. `yarn test:real` (when env/secrets are present)
 4. push branch, confirm GitHub Actions run status
+
+## Phase 2 (Requested Follow-up)
+
+Scope requested:
+- [x] 2. Stream upstream responses instead of buffering them fully.
+- [x] 3. Add per-request timeout policy with distinct forward/poll/notify error codes.
+- [x] 7. Add lightweight metrics hooks (counters/timers/gauges) for integration.
+- [x] 9. Add proxy/network behavior tests:
+  - [x] large body response
+  - [x] redirect passthrough
+  - [x] multiple `set-cookie` passthrough
+  - [x] upstream timeout/failure path
+- [x] 10. Add chaos retry tests for flaky polling + flaky notify.
+- [x] Build reactive `--ui` mode with live logs + metrics graphs (TUI).
