@@ -65,12 +65,20 @@ yarn check
 Run an opt-in test against the real Transloadit API:
 
 ```bash
-yarn env:sync:node-sdk
+# set locally (for example in .env)
+export TRANSLOADIT_KEY="your-key"
+export TRANSLOADIT_SECRET="your-secret"
+# optional
+export TRANSLOADIT_ENDPOINT="https://api2.transloadit.com"
+
 yarn test:real
 ```
 
-This copies `TRANSLOADIT_KEY` and `TRANSLOADIT_SECRET` from `~/code/node-sdk/.env` into a local
-`.env` (gitignored), then runs `test/real.e2e.test.ts`.
+For CI, configure repository secrets:
+
+- `TRANSLOADIT_KEY`
+- `TRANSLOADIT_SECRET`
+- `TRANSLOADIT_ENDPOINT` (optional)
 
 ## Releases
 

@@ -22,7 +22,6 @@
   },
   "scripts": {
     "start": "node ./bin/notify-url-proxy.ts",
-    "env:sync:node-sdk": "bash ./scripts/sync-node-sdk-env.sh",
     "lint": "biome check .",
     "format": "biome format . --write",
     "typecheck": "tsc --noEmit",
