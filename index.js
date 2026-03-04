@@ -4,8 +4,35 @@ const request = require('request')
 const crypto = require('crypto')
 const _ = require('underscore')
 
+const MOVED_NOTICE = [
+  'transloadit-notify-url-proxy has moved to @transloadit/notify-url-relay.',
+  'Install with: npm install @transloadit/notify-url-relay.',
+  'New home: https://github.com/transloadit/node-sdk/tree/main/packages/notify-url-relay',
+].join(' ')
+
+let hasWarnedMovedNotice = false
+
+function warnMovedNotice () {
+  if (hasWarnedMovedNotice) {
+    return
+  }
+  hasWarnedMovedNotice = true
+
+  if (typeof process.emitWarning === 'function') {
+    process.emitWarning(MOVED_NOTICE, {
+      type: 'DeprecationWarning',
+      code: 'TRANSLOADIT_NOTIFY_URL_PROXY_MOVED',
+    })
+    return
+  }
+
+  console.warn(`[DEPRECATED] ${MOVED_NOTICE}`)
+}
+
 class TransloaditNotifyUrlProxy {
   constructor (secret, notifyUrl) {
+    warnMovedNotice()
+
     this._server = null
     this._proxy = null
 
@@ -101,13 +128,15 @@ class TransloaditNotifyUrlProxy {
 
   _checkAssembly (assemblyUrl, cb) {
     request.get(assemblyUrl, (err, res, body) => {
-      let response = JSON.parse(body)
-      let err = null
+      if (err) {
+        return cb(err)
+      }
+
+      const response = JSON.parse(body)
       let msg = ''
 
       if (!response || !response.ok) {
-        err = new Error('No ok field found in Assembly response.')
-        return cb(err)
+        return cb(new Error('No ok field found in Assembly response.'))
       }
 
       if (response.ok == 'ASSEMBLY_COMPLETED') {
