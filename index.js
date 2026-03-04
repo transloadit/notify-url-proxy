@@ -5,9 +5,9 @@ const crypto = require('crypto')
 const _ = require('underscore')
 
 const MOVED_NOTICE = [
-  'transloadit-notify-url-proxy has moved to @transloadit/notify-url-proxy.',
-  'Install with: npm install @transloadit/notify-url-proxy.',
-  'New home: https://github.com/transloadit/node-sdk/tree/main/packages/notify-url-proxy',
+  'transloadit-notify-url-proxy has moved to @transloadit/notify-url-relay.',
+  'Install with: npm install @transloadit/notify-url-relay.',
+  'New home: https://github.com/transloadit/node-sdk/tree/main/packages/notify-url-relay',
 ].join(' ')
 
 let hasWarnedMovedNotice = false

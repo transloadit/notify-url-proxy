@@ -5,10 +5,10 @@ Allows testing your notify_url locally.
 
 This repository has moved.
 
-- New package: `@transloadit/notify-url-proxy`
+- New package: `@transloadit/notify-url-relay`
 - New source of truth: `transloadit/node-sdk` monorepo
-- Package path: `packages/notify-url-proxy`
-- URL: https://github.com/transloadit/node-sdk/tree/main/packages/notify-url-proxy
+- Package path: `packages/notify-url-relay`
+- URL: https://github.com/transloadit/node-sdk/tree/main/packages/notify-url-relay
 
 Please migrate to the new package for updates and fixes.
 
